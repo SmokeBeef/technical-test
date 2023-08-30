@@ -1,0 +1,109 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model user {
+  id       String   @id @default(uuid())
+  nama     String
+  username String   @unique @db.VarChar(100)
+  password String   @db.Text
+  role     role
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt @db.Date
+
+  detailpesan detailpemesanan[]
+  pemesanan   pemesanan[]
+}
+
+model kendaraan {
+  id       String           @id
+  nama     String           @db.VarChar(255)
+  plat     String           @db.Char(10)
+  tipe     vehicleType
+  status   status_kendaraan
+  createAt DateTime         @default(now())
+  updateAt DateTime         @updatedAt
+
+  detailKendaraan detailkendaraan[]
+  pemesanan       pemesanan[]
+}
+
+model supir {
+  id        String      @id @default(uuid())
+  nama      String
+  pemesanan pemesanan[]
+}
+
+model pemesanan {
+  id          String          @id @default(uuid())
+  idSupir     String
+  idKendaraan String
+  idPemesan   String
+  status      statuspemesanan
+  createAt    DateTime        @default(now())
+
+  users      user      @relation(fields: [idPemesan], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  kendaraans kendaraan @relation(fields: [idKendaraan], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  supirs     supir     @relation(fields: [idSupir], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  detail detailpemesanan[]
+
+  @@index([idKendaraan], map: "pemesanan_idKendaraan_fkey")
+  @@index([idPemesan], map: "pemesanan_idPemesan_fkey")
+  @@index([idSupir], map: "pemesanan_idSupir_fkey")
+}
+
+model detailkendaraan {
+  id          Int    @id @default(autoincrement())
+  idKendaraan String
+  odoMeter    Int
+  bbm         Int
+
+  kendaraan kendaraan @relation(fields: [idKendaraan], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([idKendaraan], map: "detailKendaraan_idKendaraan_fkey")
+}
+
+model detailpemesanan {
+  id          Int                    @id @default(autoincrement())
+  idPemesanan String
+  idPenyetuju String
+  status      detailpemesanan_status @default(belum)
+
+  user      user      @relation(fields: [idPenyetuju], references: [id], onDelete: Cascade)
+  pemesanan pemesanan @relation(fields: [idPemesanan], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([idPenyetuju], map: "detailPemesanan_idPenyetuju_fkey")
+  @@index([idPemesanan], map: "detailPemesanan_idPemesanan_fkey")
+}
+
+enum role {
+  admin
+  penyetuju
+}
+
+enum vehicleType {
+  barang
+  orang
+}
+
+enum detailpemesanan_status {
+  belum
+  setuju
+}
+
+enum status_kendaraan {
+  dipakai
+  tidak_dipakai
+}
+
+enum statuspemesanan {
+  proses
+  disetujui
+  selesai
+}
